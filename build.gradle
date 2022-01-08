@@ -1,0 +1,29 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.6.10'
+}
+
+group 'voroby'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+def versions = [
+        ScalaBinary: "2.13",
+        Release: "2.6.18"
+]
+
+test {
+    useJUnitPlatform()
+}
+
+dependencies {
+    /*akka*/
+    implementation platform("com.typesafe.akka:akka-bom_${versions.ScalaBinary}:${versions.Release}")
+    implementation "com.typesafe.akka:akka-actor-typed_${versions.ScalaBinary}"
+    testImplementation "com.typesafe.akka:akka-actor-testkit-typed_${versions.ScalaBinary}:${versions.Release}"
+    /*kotlin*/
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5:1.6.10'
+}
