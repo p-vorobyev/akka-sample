@@ -1,6 +1,8 @@
 package iot
 
 import Log
+import akka.actor.AbstractActor
+import akka.actor.Props
 import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.PostStop
@@ -35,7 +37,13 @@ class RecordTemperature(
 class TemperatureRecorded(val requestId: Long)
 
 
-class Device: AbstractBehavior<Command> {
+class RequestTrackDevice(val groupId: String, val deviceId: String): Command
+
+
+class DeviceRegistered
+
+
+class DeviceBehavior: AbstractBehavior<Command> {
 
     private val groupId: String
 
@@ -54,7 +62,7 @@ class Device: AbstractBehavior<Command> {
 
     companion object: Log() {
         fun create(groupId: String, deviceId: String): Behavior<Command> {
-            return Behaviors.setup { context -> Device(context, groupId, deviceId) }
+            return Behaviors.setup { context -> DeviceBehavior(context, groupId, deviceId) }
         }
     }
 
@@ -78,9 +86,66 @@ class Device: AbstractBehavior<Command> {
         return this
     }
 
-    private fun onPostStop(): Device {
+    private fun onPostStop(): DeviceBehavior {
         //context?.log?.info("Device actor $groupId-$deviceId stopped")
         log.info("Device actor $groupId-$deviceId stopped")
         return this
+    }
+}
+
+
+class DeviceActor: AbstractActor {
+
+    private val groupId: String
+
+    private val deviceId: String
+
+    private var lastTemperatureReading: Double? = null
+
+    constructor(groupId: String,
+                deviceId: String) : super() {
+        this.groupId = groupId
+        this.deviceId = deviceId
+    }
+
+    companion object: Log() {
+        fun props(groupId: String, deviceId: String): Props {
+            return Props.create(DeviceActor::class.java) { DeviceActor(groupId, deviceId) }
+        }
+    }
+
+    override fun preStart() {
+        log.info("Device actor $groupId-$deviceId started")
+    }
+
+    override fun postStop() {
+        log.info("Device actor $groupId-$deviceId stopped")
+    }
+
+    override fun createReceive(): Receive {
+        return receiveBuilder()
+            .match(RequestTrackDevice::class.java, this::onRequestTrackDevice)
+            .match(RecordTemperature::class.java, this::onRecordTemperature)
+            .match(ReadTemperature::class.java, this::onReadTemperature)
+            .build()
+    }
+
+    private fun onRequestTrackDevice(r: RequestTrackDevice) {
+        if (this.groupId == r.groupId && this.deviceId == r.deviceId) {
+            sender.tell(DeviceRegistered(), self)
+        } else {
+            log.warn("Ignoring TrackDevice request for ${r.groupId}-${r.deviceId}. " +
+                    "This actor is responsible for ${this.groupId}-${this.deviceId}.")
+        }
+    }
+
+    private fun onRecordTemperature(r: RecordTemperature) {
+        log.info("Recorded temperature reading ${r.value} with ${r.requestId}")
+        lastTemperatureReading = r.value
+        sender.tell(TemperatureRecorded(r.requestId), self)
+    }
+
+    private fun onReadTemperature(r: ReadTemperature) {
+        sender.tell(RespondTemperature(r.requestId, lastTemperatureReading), self)
     }
 }

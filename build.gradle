@@ -22,6 +22,7 @@ dependencies {
     /*akka*/
     implementation platform("com.typesafe.akka:akka-bom_${versions.ScalaBinary}:${versions.Release}")
     implementation "com.typesafe.akka:akka-actor-typed_${versions.ScalaBinary}"
+    compileOnly 'com.typesafe.akka:akka-actor_2.13:2.6.18'
     testImplementation "com.typesafe.akka:akka-actor-testkit-typed_${versions.ScalaBinary}:${versions.Release}"
     /*logging*/
     implementation "org.slf4j:slf4j-api:1.7.32"
