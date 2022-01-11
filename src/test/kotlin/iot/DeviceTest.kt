@@ -1,10 +1,8 @@
 package iot
 
 import AbstractTestKit
-import akka.actor.ActorSystem
 import akka.actor.testkit.typed.javadsl.TestProbe
 import akka.actor.typed.ActorRef
-import akka.testkit.TestKit
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -41,22 +39,15 @@ internal class DeviceTest: AbstractTestKit() {
 
     @Test
     fun testReplyToRegistrationRequests() {
-        val system = ActorSystem.create("actor-system")
-        val probe = TestKit(system)
-
         val deviceActor = system.actorOf(DeviceActor.props(groupId = "group", deviceId = "device"))
 
         deviceActor.tell(RequestTrackDevice("group", "device"), probe.testActor())
         probe.expectMsgClass(DeviceRegistered::class.java)
-
         assertEquals(deviceActor, probe.lastSender())
     }
 
     @Test
     fun estIgnoreWrongRegistrationRequests() {
-        val system = ActorSystem.create()
-        val probe = TestKit(system)
-
         val deviceActor = system.actorOf(DeviceActor.props(groupId = "group", deviceId = "device"))
 
         deviceActor.tell(RequestTrackDevice("wrongGroup", "device"), probe.testActor())

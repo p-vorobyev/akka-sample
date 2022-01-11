@@ -30,7 +30,7 @@ class RespondTemperature(
 class RecordTemperature(
     val requestId: Long,
     val value: Double,
-    val replyTo: ActorRef<TemperatureRecorded>
+    val replyTo: ActorRef<TemperatureRecorded>? = null
 ): Command
 
 
@@ -77,7 +77,7 @@ class DeviceBehavior: AbstractBehavior<Command> {
     private fun onRecordTemperature(r: RecordTemperature): Behavior<Command> {
         log.info("Recorded temperature reading ${r.value} with ${r.requestId}")
         lastTemperatureReading = r.value
-        r.replyTo.tell(TemperatureRecorded(r.requestId))
+        r.replyTo?.tell(TemperatureRecorded(r.requestId))
         return this
     }
 
