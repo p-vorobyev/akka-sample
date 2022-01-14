@@ -6,6 +6,10 @@ import akka.actor.ActorRef
 import akka.actor.Props
 import akka.actor.Terminated
 
+class RequestDeviceList(val requestId: Long): Command
+
+class ReplyDeviceList(val requestId: Long, val ids: Set<String>)
+
 class DeviceGroupActor(private val groupId: String): AbstractActor() {
 
     companion object: Log() {
@@ -30,20 +34,27 @@ class DeviceGroupActor(private val groupId: String): AbstractActor() {
         return receiveBuilder()
             .match(RequestTrackDevice::class.java, this::onTrackDevice)
             .match(Terminated::class.java, this::onTerminated)
+            .match(RequestDeviceList::class.java, this::onRequestDeviceList)
             .build()
+    }
+
+    private fun onRequestDeviceList(rdl: RequestDeviceList) {
+        log.info("List of deviceIds requested: [requestId: ${rdl.requestId}]")
+        sender.tell(ReplyDeviceList(rdl.requestId, deviceIdToActor.keys), self)
     }
 
     private fun onTrackDevice(reqMsg: RequestTrackDevice) {
         if (this.groupId == reqMsg.groupId) {
-            var actorRef: ActorRef? = deviceIdToActor[reqMsg.deviceId]
-            if (actorRef != null) {
-                actorRef.forward(reqMsg, context)
+            var deviceActorRef: ActorRef? = deviceIdToActor[reqMsg.deviceId]
+            if (deviceActorRef != null) {
+                deviceActorRef.forward(reqMsg, context)
             } else {
                 log.info("Creating device actor for ${reqMsg.deviceId}")
-                actorRef = context.actorOf(DeviceActor.props(groupId, reqMsg.deviceId), "device-${reqMsg.deviceId}")
-                deviceIdToActor[reqMsg.deviceId] = actorRef
-                actorToDeviceId[actorRef] = reqMsg.deviceId
-                actorRef.forward(reqMsg, context)
+                deviceActorRef = context.actorOf(DeviceActor.props(groupId, reqMsg.deviceId), "device-${reqMsg.deviceId}")
+                context.watch(deviceActorRef)
+                deviceIdToActor[reqMsg.deviceId] = deviceActorRef
+                actorToDeviceId[deviceActorRef] = reqMsg.deviceId
+                deviceActorRef.forward(reqMsg, context)
             }
         } else {
             log.warn("Ignoring TrackDevice request for ${reqMsg.groupId}. This actor is responsible for ${this.groupId}.")

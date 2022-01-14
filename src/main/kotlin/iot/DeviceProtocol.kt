@@ -12,9 +12,6 @@ import akka.actor.typed.javadsl.Behaviors
 import akka.actor.typed.javadsl.Receive
 
 
-interface Command
-
-
 class ReadTemperature(
     val requestId: Long,
     val replyTo: ActorRef<RespondTemperature>
