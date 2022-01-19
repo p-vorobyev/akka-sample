@@ -21,3 +21,5 @@ class RequestTrackDevice(val groupId: String, val deviceId: String): Command
 
 
 class RequestDeviceList(val requestId: Long): Command
+
+class RequestAllTemperatures(val requestId: Long): Command
