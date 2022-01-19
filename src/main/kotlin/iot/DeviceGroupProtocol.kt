@@ -6,8 +6,6 @@ import akka.actor.ActorRef
 import akka.actor.Props
 import akka.actor.Terminated
 
-class RequestDeviceList(val requestId: Long): Command
-
 class ReplyDeviceList(val requestId: Long, val ids: Set<String>)
 
 class DeviceGroupActor(private val groupId: String): AbstractActor() {
@@ -43,21 +41,21 @@ class DeviceGroupActor(private val groupId: String): AbstractActor() {
         sender.tell(ReplyDeviceList(rdl.requestId, deviceIdToActor.keys), self)
     }
 
-    private fun onTrackDevice(reqMsg: RequestTrackDevice) {
-        if (this.groupId == reqMsg.groupId) {
-            var deviceActorRef: ActorRef? = deviceIdToActor[reqMsg.deviceId]
+    private fun onTrackDevice(reqTrack: RequestTrackDevice) {
+        if (this.groupId == reqTrack.groupId) {
+            var deviceActorRef: ActorRef? = deviceIdToActor[reqTrack.deviceId]
             if (deviceActorRef != null) {
-                deviceActorRef.forward(reqMsg, context)
+                deviceActorRef.forward(reqTrack, context)
             } else {
-                log.info("Creating device actor for ${reqMsg.deviceId}")
-                deviceActorRef = context.actorOf(DeviceActor.props(groupId, reqMsg.deviceId), "device-${reqMsg.deviceId}")
+                log.info("Creating device actor for ${reqTrack.deviceId}")
+                deviceActorRef = context.actorOf(DeviceActor.props(groupId, reqTrack.deviceId), "device-${reqTrack.deviceId}")
                 context.watch(deviceActorRef)
-                deviceIdToActor[reqMsg.deviceId] = deviceActorRef
-                actorToDeviceId[deviceActorRef] = reqMsg.deviceId
-                deviceActorRef.forward(reqMsg, context)
+                deviceIdToActor[reqTrack.deviceId] = deviceActorRef
+                actorToDeviceId[deviceActorRef] = reqTrack.deviceId
+                deviceActorRef.forward(reqTrack, context)
             }
         } else {
-            log.warn("Ignoring TrackDevice request for ${reqMsg.groupId}. This actor is responsible for ${this.groupId}.")
+            log.warn("Ignoring TrackDevice request for ${reqTrack.groupId}. This actor is responsible for ${this.groupId}.")
         }
     }
 

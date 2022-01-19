@@ -3,7 +3,6 @@ package iot
 import Log
 import akka.actor.AbstractActor
 import akka.actor.Props
-import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.PostStop
 import akka.actor.typed.javadsl.AbstractBehavior
@@ -11,30 +10,13 @@ import akka.actor.typed.javadsl.ActorContext
 import akka.actor.typed.javadsl.Behaviors
 import akka.actor.typed.javadsl.Receive
 
-
-class ReadTemperature(
-    val requestId: Long,
-    val replyTo: ActorRef<RespondTemperature>
-) : Command
-
-
 class RespondTemperature(
     val requestId: Long,
     val value: Double?
 )
 
 
-class RecordTemperature(
-    val requestId: Long,
-    val value: Double,
-    val replyTo: ActorRef<TemperatureRecorded>? = null
-): Command
-
-
 class TemperatureRecorded(val requestId: Long)
-
-
-class RequestTrackDevice(val groupId: String, val deviceId: String): Command
 
 
 class DeviceRegistered
