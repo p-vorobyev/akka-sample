@@ -8,17 +8,6 @@ import akka.actor.Terminated
 
 class ReplyDeviceList(val requestId: Long, val ids: Set<String>)
 
-interface TemperatureReading
-
-class RespondAllTemperatures(val requestId: Long, val temperatures: Map<String, TemperatureReading>)
-
-data class Temperature(val value: Double): TemperatureReading
-
-class TemperatureNotAvailable: TemperatureReading
-
-class DeviceNotAvailable: TemperatureReading
-
-class DeviceTimedOut: TemperatureReading
 
 class DeviceGroupActor(private val groupId: String): AbstractActor() {
 

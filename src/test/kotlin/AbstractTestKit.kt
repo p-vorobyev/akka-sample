@@ -14,11 +14,17 @@ abstract class AbstractTestKit {
 
     lateinit var probe: TestKit
 
+    lateinit var probe1: TestKit
+
+    lateinit var probe2: TestKit
+
     @BeforeEach
     fun setUp() {
         testKit = ActorTestKit.create()
         system = ActorSystem.create("actor-system")
         probe = TestKit(system)
+        probe1 = TestKit(system)
+        probe2 = TestKit(system)
     }
 
     @AfterEach

@@ -61,7 +61,7 @@ class DeviceBehavior: AbstractBehavior<Command> {
     }
 
     private fun onReadTemperature(r: ReadTemperature): Behavior<Command> {
-        r.replyTo.tell(RespondTemperature(r.requestId, lastTemperatureReading))
+        r.replyTo?.tell(RespondTemperature(r.requestId, lastTemperatureReading))
         return this
     }
 
