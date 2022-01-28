@@ -109,5 +109,42 @@ internal class DeviceGroupActorTest: AbstractTestKit() {
             Duration.create(3L, TimeUnit.SECONDS),
             Duration.create(100, TimeUnit.MILLISECONDS))
     }
+
+    @Test
+    fun testCollectTemperaturesFromAllActiveDevices() {
+        val group = "group-actor-1"
+        val groupActor: ActorRef = system.actorOf(DeviceGroupActor.props(group))
+
+        groupActor.tell(RequestTrackDevice(group, "device1"), probe.testActor())
+        probe.expectMsgClass(DeviceRegistered::class.java)
+        val device1Actor: ActorRef = probe.lastSender()
+
+        groupActor.tell(RequestTrackDevice(group, "device2"), probe.testActor())
+        probe.expectMsgClass(DeviceRegistered::class.java)
+        val device2Actor: ActorRef = probe.lastSender()
+
+        groupActor.tell(RequestTrackDevice(group, "device3"), probe.testActor())
+        probe.expectMsgClass(DeviceRegistered::class.java)
+        val device3Actor: ActorRef = probe.lastSender()
+
+        // Check that the device actors are working
+        device1Actor.tell(RecordTemperature(0L, 10.0), probe.testActor())
+        assertEquals(0L, probe.expectMsgClass(TemperatureRecorded::class.java).requestId)
+        device2Actor.tell(RecordTemperature(1L, 18.3), probe.testActor())
+        assertEquals(1L, probe.expectMsgClass(TemperatureRecorded::class.java).requestId)
+        // No temperature for device 3
+
+        groupActor.tell(RequestAllTemperatures(0L), probe.testActor())
+        val allTemperatures: RespondAllTemperatures = probe.expectMsgClass(RespondAllTemperatures::class.java)
+        assertEquals(0L, allTemperatures.requestId)
+
+        val expectedTemperatures = mapOf(
+            "device1" to Temperature(10.0),
+            "device2" to Temperature(18.3),
+            "device3" to TemperatureNotAvailable()
+        )
+
+        assertEquals(expectedTemperatures, allTemperatures.temperatures)
+    }
 }
 

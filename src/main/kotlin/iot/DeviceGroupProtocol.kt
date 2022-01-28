@@ -5,6 +5,8 @@ import akka.actor.AbstractActor
 import akka.actor.ActorRef
 import akka.actor.Props
 import akka.actor.Terminated
+import scala.concurrent.duration.FiniteDuration
+import java.util.concurrent.TimeUnit.SECONDS
 
 class ReplyDeviceList(val requestId: Long, val ids: Set<String>)
 
@@ -34,6 +36,7 @@ class DeviceGroupActor(private val groupId: String): AbstractActor() {
             .match(RequestTrackDevice::class.java, this::onTrackDevice)
             .match(Terminated::class.java, this::onTerminated)
             .match(RequestDeviceList::class.java, this::onRequestDeviceList)
+            .match(RequestAllTemperatures::class.java, this::onAllTemperatures)
             .build()
     }
 
@@ -70,5 +73,12 @@ class DeviceGroupActor(private val groupId: String): AbstractActor() {
         } else {
             log.warn("No deviceId found for terminated Actor: [$actorRef]")
         }
+    }
+
+    private fun onAllTemperatures(req: RequestAllTemperatures) {
+        val actorToDeviceIdCopy = HashMap(actorToDeviceId)
+        context.actorOf(
+            DeviceGroupQuery.props(actorToDeviceIdCopy, req.requestId, sender, FiniteDuration(3, SECONDS))
+        )
     }
 }
